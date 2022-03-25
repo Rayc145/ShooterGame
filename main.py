@@ -1,13 +1,5 @@
 # Import and initialize the pygame library
-from multiprocessing import reduction
-from ntpath import realpath
-from operator import truediv
-from pickle import FALSE
-from re import L
-from telnetlib import GA
-from textwrap import indent
-from turtle import width
-from pkg_resources import fixup_namespace_packages
+from string import whitespace
 import pygame
 pygame.init()
 import json
@@ -29,6 +21,7 @@ speed, jumpSpeed = 0, 0
 inAir = False
 GRIDHEIGHT = HEIGHT/20
 GRIDWIDTH = WIDTH/20
+page = "menu"
 
 # Functions
 def drawGrid(color):
@@ -85,6 +78,8 @@ class Game:
     def __init__(self, width, height):
         self.width = width
         self.height = height
+        self.menuColor = BLACK
+        self.font = pygame.font.SysFont("Arial", int(self.height)*2, False, False)
         with open("levels.json", "r") as readFile:
             data = json.load(readFile)
             self.board = data["level1"]
@@ -126,6 +121,18 @@ class Game:
         elif button == 3:
             self.board[int(y/int(self.height))][int(x/int(self.width))] = 0
 
+    def mainMenu(self):
+        menuText = self.font.render("Menu", True, BLACK)
+        screen.blit(menuText, (int(self.width)*8, int(self.height)))
+        editorText = self.font.render("Editor", True, WHITE)
+        pygame.draw.rect(screen, self.menuColor, [int(self.width)*7, int(self.height)*6, int(self.width)*6, int(self.height)*2])
+        screen.blit(editorText, (int(self.width)*8, int(self.height)*6-5))
+    
+    def mainMenuEvents(self, mousePos):
+        global page
+        (x, y) = mousePos
+        if int(self.width)*7 < x < int(self.width)*13 and int(self.height)*6 < y < int(self.height)*8:
+            page = "editor"
     
 gameBoard = Game(GRIDWIDTH, GRIDHEIGHT)
 character = Player(100, 350)
@@ -139,13 +146,19 @@ while running:
                 json.dump(data, writeFile)
             running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
-            gameBoard.gameMaker(pygame.mouse.get_pos(), event.button)
+            if page == "menu":
+                gameBoard.mainMenuEvents(pygame.mouse.get_pos())
+            elif page == "editor":
+                gameBoard.gameMaker(pygame.mouse.get_pos(), event.button)
     # Fill the background with white
     screen.fill(WHITE)
     # Grid
     drawGrid(BLACK)
-    gameBoard.drawBoard()
-    character.update(gameBoard.listOfTiles)
+    if page == "menu":
+        gameBoard.mainMenu()
+    elif page == "editor":
+        gameBoard.drawBoard()
+        character.update(gameBoard.listOfTiles)
     # Flip the display
     pygame.display.flip()
     clock.tick(30)
